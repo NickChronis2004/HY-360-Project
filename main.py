@@ -74,91 +74,98 @@ class PayrollApp:
         """Παράθυρο πρόσληψης μόνιμου υπαλλήλου"""
         window = tk.Toplevel(self.root)
         window.title("Πρόσληψη Μόνιμου Υπαλλήλου")
-        window.geometry("500x700")
+        window.geometry("500x750")
         
         frame = ttk.Frame(window, padding="20")
         frame.pack(fill='both', expand=True)
         
+        # Row 0: Τίτλος
         ttk.Label(frame, text="Πρόσληψη Μόνιμου Υπαλλήλου", 
                  font=('Arial', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
         
-        # Όνομα
-        ttk.Label(frame, text="Πλήρες Όνομα:").grid(row=1, column=0, sticky='w', pady=5)
-        name_entry = ttk.Entry(frame, width=40)
-        name_entry.grid(row=1, column=1, pady=5)
+        # Row 1: Όνομα
+        ttk.Label(frame, text="Όνομα:").grid(row=1, column=0, sticky='w', pady=5)
+        firstname_entry = ttk.Entry(frame, width=40)
+        firstname_entry.grid(row=1, column=1, pady=5)
         
-        # Οικογενειακή κατάσταση
-        ttk.Label(frame, text="Οικογενειακή Κατάσταση:").grid(row=2, column=0, sticky='w', pady=5)
+        # Row 2: Επώνυμο
+        ttk.Label(frame, text="Επώνυμο:").grid(row=2, column=0, sticky='w', pady=5)
+        lastname_entry = ttk.Entry(frame, width=40)
+        lastname_entry.grid(row=2, column=1, pady=5)
+
+        # Row 3: Οικογενειακή κατάσταση
+        ttk.Label(frame, text="Οικογενειακή Κατάσταση:").grid(row=3, column=0, sticky='w', pady=5)
         marital_var = tk.StringVar(value="single")
         marital_frame = ttk.Frame(frame)
-        marital_frame.grid(row=2, column=1, sticky='w', pady=5)
+        marital_frame.grid(row=3, column=1, sticky='w', pady=5)
         ttk.Radiobutton(marital_frame, text="Άγαμος/η", variable=marital_var, 
                        value="single").pack(side='left', padx=5)
         ttk.Radiobutton(marital_frame, text="Έγγαμος/η", variable=marital_var, 
                        value="married").pack(side='left', padx=5)
         
-        # Αριθμός παιδιών
-        ttk.Label(frame, text="Αριθμός Παιδιών:").grid(row=3, column=0, sticky='w', pady=5)
+        # Row 4: Αριθμός παιδιών
+        ttk.Label(frame, text="Αριθμός Παιδιών:").grid(row=4, column=0, sticky='w', pady=5)
         children_spin = ttk.Spinbox(frame, from_=0, to=10, width=10)
         children_spin.set(0)
-        children_spin.grid(row=3, column=1, sticky='w', pady=5)
+        children_spin.grid(row=4, column=1, sticky='w', pady=5)
         
-        # Κατηγορία
-        ttk.Label(frame, text="Κατηγορία:").grid(row=4, column=0, sticky='w', pady=5)
+        # Row 5: Κατηγορία
+        ttk.Label(frame, text="Κατηγορία:").grid(row=5, column=0, sticky='w', pady=5)
         category_var = tk.StringVar()
         category_combo = ttk.Combobox(frame, textvariable=category_var, width=38,
-                                     values=["permanent_admin", "permanent_teaching"],
+                                     values=["Μόνιμος", "Συμβασιούχος","Διδακτικός", "Διοικητικός"],
                                      state='readonly')
-        category_combo.grid(row=4, column=1, pady=5)
+        category_combo.grid(row=5, column=1, pady=5)
         category_combo.current(0)
         
-        # Τμήμα
-        ttk.Label(frame, text="Τμήμα:").grid(row=5, column=0, sticky='w', pady=5)
+        # Row 6: Τμήμα
+        ttk.Label(frame, text="Τμήμα:").grid(row=6, column=0, sticky='w', pady=5)
         dept_entry = ttk.Entry(frame, width=40)
-        dept_entry.grid(row=5, column=1, pady=5)
+        dept_entry.grid(row=6, column=1, pady=5)
         
-        # Ημερομηνία έναρξης
-        ttk.Label(frame, text="Ημερομηνία Έναρξης:").grid(row=6, column=0, sticky='w', pady=5)
+        # Row 7: Ημερομηνία έναρξης
+        ttk.Label(frame, text="Ημερομηνία Έναρξης:").grid(row=7, column=0, sticky='w', pady=5)
         hire_date_entry = ttk.Entry(frame, width=40)
-        # Default: πρώτη μέρα επόμενου μήνα
+        # Υπολογισμός ημερομηνίας (1η του επόμενου μήνα)
         today = datetime.now()
         if today.month == 12:
             next_month = f"{today.year + 1}-01-01"
         else:
             next_month = f"{today.year}-{today.month + 1:02d}-01"
         hire_date_entry.insert(0, next_month)
-        hire_date_entry.grid(row=6, column=1, pady=5)
+        hire_date_entry.grid(row=7, column=1, pady=5)
         
-        # Διεύθυνση
-        ttk.Label(frame, text="Διεύθυνση:").grid(row=7, column=0, sticky='w', pady=5)
+        # Row 8: Διεύθυνση
+        ttk.Label(frame, text="Διεύθυνση:").grid(row=8, column=0, sticky='w', pady=5)
         address_entry = ttk.Entry(frame, width=40)
-        address_entry.grid(row=7, column=1, pady=5)
+        address_entry.grid(row=8, column=1, pady=5)
         
-        # Τηλέφωνο
-        ttk.Label(frame, text="Τηλέφωνο:").grid(row=8, column=0, sticky='w', pady=5)
+        # Row 9: Τηλέφωνο
+        ttk.Label(frame, text="Τηλέφωνο:").grid(row=9, column=0, sticky='w', pady=5)
         phone_entry = ttk.Entry(frame, width=40)
-        phone_entry.grid(row=8, column=1, pady=5)
+        phone_entry.grid(row=9, column=1, pady=5)
         
-        # Αριθμός λογαριασμού
-        ttk.Label(frame, text="Αρ. Τραπεζικού Λογ/σμού:").grid(row=9, column=0, sticky='w', pady=5)
+        # Row 10: Αριθμός λογαριασμού
+        ttk.Label(frame, text="Αρ. Τραπεζικού Λογ/σμού:").grid(row=10, column=0, sticky='w', pady=5)
         bank_acc_entry = ttk.Entry(frame, width=40)
-        bank_acc_entry.grid(row=9, column=1, pady=5)
+        bank_acc_entry.grid(row=10, column=1, pady=5)
         
-        # Όνομα τράπεζας
-        ttk.Label(frame, text="Όνομα Τράπεζας:").grid(row=10, column=0, sticky='w', pady=5)
+        # Row 11: Όνομα τράπεζας
+        ttk.Label(frame, text="Όνομα Τράπεζας:").grid(row=11, column=0, sticky='w', pady=5)
         bank_name_entry = ttk.Entry(frame, width=40)
-        bank_name_entry.grid(row=10, column=1, pady=5)
+        bank_name_entry.grid(row=11, column=1, pady=5)
         
-        # Buttons
+        # Function Submit
         def submit_hire():
             # Validation
-            if not name_entry.get() or not category_var.get() or not dept_entry.get():
+            if not firstname_entry.get() or not lastname_entry.get() or not category_var.get() or not dept_entry.get():
                 messagebox.showerror("Σφάλμα", "Συμπληρώστε όλα τα υποχρεωτικά πεδία")
                 return
             
             # Collect data
             data = {
-                'name': name_entry.get(),
+                'firstname': firstname_entry.get(),
+                'lastname': lastname_entry.get(),
                 'marital_status': marital_var.get(),
                 'num_children': int(children_spin.get()),
                 'category': category_var.get(),
@@ -175,17 +182,17 @@ class PayrollApp:
             
             if employee_id:
                 messagebox.showinfo("Επιτυχία", 
-                                   f"Ο υπάλληλος {data['name']} προστέθηκε με ID: {employee_id}")
+                                   f"Ο υπάλληλος {data['firstname']} {data['lastname']} προστέθηκε με ID: {employee_id}")
                 window.destroy()
             else:
                 messagebox.showerror("Σφάλμα", "Αποτυχία εισαγωγής")
         
+        # Row 12: Buttons
         btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=11, column=0, columnspan=2, pady=20)
+        btn_frame.grid(row=12, column=0, columnspan=2, pady=20)
         
         ttk.Button(btn_frame, text="Υποβολή", command=submit_hire).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="Ακύρωση", command=window.destroy).pack(side='left', padx=5)
-    
     # ========== ΣΥΝΑΨΗ ΣΥΜΒΑΣΗΣ ==========
     def open_hire_contract(self):
         """Παράθυρο σύναψης σύμβασης"""
