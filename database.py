@@ -28,8 +28,25 @@ class DatabaseManager:
         
         @return: list of str - ονόματα τμημάτων
         '''
-        #TODO
-        pass
+        try:
+            cursor = self.connection.cursor()
+            
+            query = """
+                SELECT DISTINCT department
+                FROM employees
+                WHERE employee_status = 'active'
+                ORDER BY department
+            """
+            
+            cursor.execute(query)
+            departments = [row[0] for row in cursor.fetchall()]
+            
+            cursor.close()
+            return departments
+            
+        except Error as e:
+            print(f" Error fetching departments: {e}")
+            return []
     
 
     def get_active_employees(self):
@@ -38,8 +55,31 @@ class DatabaseManager:
         
         @return: list of dict - μόνο ενεργοί υπάλληλοι
         '''
-        #TODO
-        pass
+        try:
+            cursor = self.connection.cursor(dictionary=True)
+            
+            query = """
+                SELECT 
+                    employee_id,
+                    firstname,
+                    lastname,
+                    department,
+                    hire_date,
+                    employee_status
+                FROM employees
+                WHERE employee_status = 'active'
+                ORDER BY lastname, firstname
+            """
+            
+            cursor.execute(query)
+            employees = cursor.fetchall()
+            
+            cursor.close()
+            return employees
+            
+        except Error as e:
+            print(f" Error fetching active employees: {e}")
+            return []
 
 
     def hire_permanent_employee(self, data):
@@ -234,15 +274,29 @@ class DatabaseManager:
 
     def execute_custom_query(self, sql_query):
         '''
-        εκτελεση καποιου custom sql query
+        εκτέλεση κάποιου custom sql query
         
-        @param sql_query: str - το SQL query προς εκτέλεση
+        @param sql_query: str - Το SQL query προς εκτέλεση
         @return: list of dict - αποτελέσματα του query ή error message
         '''
-        #TODO
-        pass
-    
-    
+        try:
+            if not sql_query or not sql_query.strip():
+                return []
+
+            cursor = self.connection.cursor(dictionary=True)
+            cursor.execute(sql_query)
+
+            if cursor.with_rows:
+                results = cursor.fetchall()
+            else:
+                self.connection.commit()
+                results = [{"status": "ok", "rows_affected": cursor.rowcount}]
+
+            cursor.close()
+            return results
+        except Error as e:
+            return [{"error": str(e)}]
+
     def close(self):
         '''
         κλεισιμο συνδεσης

@@ -70,6 +70,14 @@ class PayrollApp:
                   command=self.exit_app, width=40).grid(row=9, column=0, pady=20)
     
     # ========== ΠΡΟΣΛΗΨΗ ΜΟΝΙΜΟΥ ==========
+    def _get_departments(self):
+        """Return department list for dropdowns."""
+        return self.db.get_departments()
+
+    def _get_active_employees(self):
+        """Return active employees list for dropdowns."""
+        return self.db.get_active_employees()
+
     def open_hire_permanent(self):
         """Παράθυρο πρόσληψης μόνιμου υπαλλήλου"""
         window = tk.Toplevel(self.root)
@@ -120,8 +128,13 @@ class PayrollApp:
         
         # Row 6: Τμήμα
         ttk.Label(frame, text="Τμήμα:").grid(row=6, column=0, sticky='w', pady=5)
-        dept_entry = ttk.Entry(frame, width=40)
-        dept_entry.grid(row=6, column=1, pady=5)
+        departments = self._get_departments()
+        dept_var = tk.StringVar()
+        dept_combo = ttk.Combobox(frame, textvariable=dept_var, width=38,
+                                  values=departments, state='readonly')
+        if departments:
+            dept_combo.current(0)
+        dept_combo.grid(row=6, column=1, pady=5)
         
         # Row 7: Ημερομηνία έναρξης
         ttk.Label(frame, text="Ημερομηνία Έναρξης:").grid(row=7, column=0, sticky='w', pady=5)
@@ -158,7 +171,7 @@ class PayrollApp:
         # Function Submit
         def submit_hire():
             # Validation
-            if not firstname_entry.get() or not lastname_entry.get() or not category_var.get() or not dept_entry.get():
+            if not firstname_entry.get() or not lastname_entry.get() or not category_var.get() or not dept_var.get():
                 messagebox.showerror("Σφάλμα", "Συμπληρώστε όλα τα υποχρεωτικά πεδία")
                 return
             
@@ -169,7 +182,7 @@ class PayrollApp:
                 'marital_status': marital_var.get(),
                 'num_children': int(children_spin.get()),
                 'category': category_var.get(),
-                'department': dept_entry.get(),
+                'department': dept_var.get(),
                 'hire_date': hire_date_entry.get(),
                 'address': address_entry.get(),
                 'phone': phone_entry.get(),
@@ -215,22 +228,41 @@ class PayrollApp:
                  font=('Arial', 12, 'bold')).pack(pady=10)
         
         # Employee list
-        employees = self.db.get_all_employees()
+        employees = self._get_active_employees()
         
         employee_var = tk.StringVar()
-        employee_combo = ttk.Combobox(frame, textvariable=employee_var, width=50)
-        employee_combo['values'] = [f"{emp['employee_id']} - {emp['name']}" for emp in employees]
+        employee_combo = ttk.Combobox(frame, textvariable=employee_var, width=50, state='readonly')
+        employee_combo['values'] = [
+            f"{emp['employee_id']} - {emp['lastname']} {emp['firstname']}" for emp in employees
+        ]
         employee_combo.pack(pady=10)
+        
+        ttk.Label(frame, text="Ξ¤ΞΌΞ®ΞΌΞ±:").pack(pady=(10, 0))
+        departments = self._get_departments()
+        dept_var = tk.StringVar()
+        dept_combo = ttk.Combobox(frame, textvariable=dept_var, width=50,
+                                  values=departments, state='readonly')
+        if departments:
+            dept_combo.current(0)
+        dept_combo.pack(pady=5)
         
         def load_employee():
             if not employee_var.get():
                 return
             
             emp_id = int(employee_var.get().split(' - ')[0])
-            emp_data = self.db.get_employee_by_id(emp_id)
+            emp_data = next((emp for emp in employees if emp['employee_id'] == emp_id), None)
+            if not emp_data:
+                messagebox.showerror("Ξ£Ο†Ξ¬Ξ»ΞΌΞ±", "Ξ”ΞµΞ½ Ξ²ΟΞ­ΞΈΞ·ΞΊΞµ Ο…Ο€Ξ¬Ξ»Ξ·Ξ»ΞΏΟ‚")
+                return
+
+            if emp_data['department'] in departments:
+                dept_combo.set(emp_data['department'])
+            else:
+                dept_combo.set('')
             
             # Show edit form with current data
-            messagebox.showinfo("TODO", f"Φόρτωσε δεδομένα για: {emp_data['name']}")
+            messagebox.showinfo("TODO", f"Φόρτωσε δεδομένα για: {emp_data['lastname']} {emp_data['firstname']}")
         
         ttk.Button(frame, text="Επεξεργασία", command=load_employee).pack(pady=10)
         ttk.Button(frame, text="Κλείσιμο", command=window.destroy).pack(pady=5)
@@ -242,10 +274,38 @@ class PayrollApp:
     
     # ========== ΑΠΟΛΥΣΗ ==========
     def open_termination(self):
-        """Παράθυρο απόλυσης/συνταξιοδότησης"""
-        messagebox.showinfo("TODO", "Φόρμα απόλυσης/συνταξιοδότησης")
-    
-    # ========== ΚΑΤΑΒΟΛΗ ΜΙΣΘΟΔΟΣΙΑΣ ==========
+        """Termination/retirement window"""
+        window = tk.Toplevel(self.root)
+        window.title("Απόλυση/Συνταξιοδότηση")
+        window.geometry("500x350")
+
+        frame = ttk.Frame(window, padding="20")
+        frame.pack(fill='both', expand=True)
+
+        ttk.Label(frame, text="Επιλογή Υπαλλήλου",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        employees = self._get_active_employees()
+        employee_var = tk.StringVar()
+        employee_combo = ttk.Combobox(frame, textvariable=employee_var, width=50, state='readonly')
+        employee_combo['values'] = [
+            f"{emp['employee_id']} - {emp['lastname']} {emp['firstname']}" for emp in employees
+        ]
+        employee_combo.pack(pady=10)
+
+        ttk.Label(frame, text="Ημερομηνία Τερματισμού (YYYY-MM-DD):").pack(pady=(10, 0))
+        termination_entry = ttk.Entry(frame, width=30)
+        termination_entry.pack(pady=5)
+
+        def submit_termination():
+            if not employee_var.get() or not termination_entry.get():
+                messagebox.showerror("Σφάλμα", "Συμπληρώστε όλα τα υποχρεωτικά πεδία")
+                return
+            messagebox.showinfo("TODO", "Η λειτουργία απόλυσης/συνταξιοδότησης δεν έχει υλοποιηθεί")
+
+        ttk.Button(frame, text="Υποβολή", command=submit_termination).pack(pady=10)
+        ttk.Button(frame, text="Κλείσιμο", command=window.destroy).pack()
+
     def open_payroll(self):
         """Παράθυρο καταβολής μισθοδοσίας"""
         window = tk.Toplevel(self.root)
@@ -336,10 +396,47 @@ class PayrollApp:
         messagebox.showinfo("TODO", "Ζήτα ημερομηνίες και δείξε αποτέλεσμα")
     
     def report_employee_details(self):
-        """Αναφορά 4"""
-        # Ask for employee
-        messagebox.showinfo("TODO", "Επιλογή υπαλλήλου και προβολή στοιχείων")
-    
+        """Report 4"""
+        window = tk.Toplevel(self.root)
+        window.title("Στοιχεία υπαλλήλου")
+        window.geometry("500x400")
+
+        frame = ttk.Frame(window, padding="20")
+        frame.pack(fill='both', expand=True)
+
+        ttk.Label(frame, text="Επιλογή Υπαλλήλου",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        employees = self._get_active_employees()
+        employee_var = tk.StringVar()
+        employee_combo = ttk.Combobox(frame, textvariable=employee_var, width=50, state='readonly')
+        employee_combo['values'] = [
+            f"{emp['employee_id']} - {emp['lastname']} {emp['firstname']}" for emp in employees
+        ]
+        employee_combo.pack(pady=10)
+
+        result_text = tk.Text(frame, height=10, width=60)
+        result_text.pack(pady=10)
+
+        def show_details():
+            if not employee_var.get():
+                return
+            emp_id = int(employee_var.get().split(' - ')[0])
+            emp_data = next((emp for emp in employees if emp['employee_id'] == emp_id), None)
+            if not emp_data:
+                messagebox.showerror("Σφάλμα", "Δεν βρέθηκε υπάλληλος")
+                return
+
+            result_text.delete('1.0', tk.END)
+            result_text.insert(tk.END, f"ID: {emp_data['employee_id']}\n")
+            result_text.insert(tk.END, f"Name: {emp_data['lastname']} {emp_data['firstname']}\n")
+            result_text.insert(tk.END, f"Department: {emp_data['department']}\n")
+            result_text.insert(tk.END, f"Hire date: {emp_data['hire_date']}\n")
+            result_text.insert(tk.END, f"Status: {emp_data['employee_status']}\n")
+
+        ttk.Button(frame, text="Προβολή", command=show_details).pack(pady=5)
+        ttk.Button(frame, text="Κλείσιμο", command=window.destroy).pack()
+
     def report_total_by_category(self):
         """Αναφορά 5"""
         results = self.db.get_total_payroll_by_category()
