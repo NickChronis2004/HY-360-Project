@@ -14,7 +14,7 @@ class DatabaseManager:
                 host="localhost",
                 user="root",
                 password="",
-                database="payroll_db"
+                database="HY360"
             )
             if self.connection.is_connected():
                 print(" Database connected")
