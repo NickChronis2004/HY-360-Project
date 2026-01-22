@@ -29,13 +29,14 @@ async function initDatabase() {
         lastname VARCHAR(50) NOT NULL,
         marital_status VARCHAR(50) NOT NULL,
         num_children INT DEFAULT 0,
-        department VARCHAR(50) NOT NULL,
+        department_id INT NOT NULL,
         hire_date DATE NOT NULL,
         address VARCHAR(100) NOT NULL,
         phone VARCHAR(20) NOT NULL,
         bank_account VARCHAR(40) NOT NULL,
         bank_name VARCHAR(50),
-        employee_status VARCHAR(20) NOT NULL
+        employee_status VARCHAR(20) NOT NULL,
+        FOREIGN KEY (department_id) REFERENCES departments(department_id)
      )
     `;
 
@@ -114,6 +115,13 @@ async function initDatabase() {
             ON DELETE CASCADE ON UPDATE CASCADE -- if we delete the employee the administrative attribute of his is deleted also.
         )`;
 
+        const createDepartmentTableQuery =`
+        CREATE TABLE IF NOT EXISTS departments (
+            department_id INT PRIMARY KEY AUTO_INCREMENT,
+            department_name VARCHAR(50) NOT NULL UNIQUE
+        )`;
+
+        await conn.query(createDepartmentTableQuery);
         await conn.query(createEmployeeTableQuery);
         await conn.query(createPaymentsTableQuery);
         await conn.query(createBaseSalariesTableQuery);
