@@ -24,22 +24,24 @@ class DatabaseManager:
 
     def get_departments(self):
         '''
-        λιστα με ολα τα τμηματα
+        Λίστα με όλα τα τμήματα
         
-        @return: list of str - ονόματα τμημάτων
+        @return: list of dict - {department_id, department_name}
         '''
         try:
             cursor = self.connection.cursor()
             
-            query = """
-                SELECT DISTINCT department
-                FROM employees
-                WHERE employee_status = 'active'
-                ORDER BY department
-            """
+            query = '''
+                SELECT department_id, department_name
+                FROM departments
+                ORDER BY department_name
+            '''
             
             cursor.execute(query)
-            departments = [row[0] for row in cursor.fetchall()]
+            departments = [
+                {"department_id": row[0], "department_name": row[1]}
+                for row in cursor.fetchall()
+            ]
             
             cursor.close()
             return departments
@@ -47,7 +49,7 @@ class DatabaseManager:
         except Error as e:
             print(f" Error fetching departments: {e}")
             return []
-    
+
 
     def get_active_employees(self):
         '''
@@ -63,10 +65,12 @@ class DatabaseManager:
                     employee_id,
                     firstname,
                     lastname,
-                    department,
+                    department_id,
+                    d.department_name AS department_name,
                     hire_date,
                     employee_status
-                FROM employees
+                FROM employees e
+                JOIN departments d ON e.department_id = d.department_id
                 WHERE employee_status = 'active'
                 ORDER BY lastname, firstname
             """
