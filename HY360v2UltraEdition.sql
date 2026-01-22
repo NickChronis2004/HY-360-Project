@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 22, 2026 at 09:15 PM
+-- Generation Time: Jan 22, 2026 at 10:05 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -110,7 +110,7 @@ CREATE TABLE `employees` (
   `lastname` varchar(50) NOT NULL,
   `marital_status` varchar(50) NOT NULL,
   `num_children` int(11) DEFAULT 0,
-  `department` varchar(50) NOT NULL,
+  `department_id` int(11) NOT NULL,
   `hire_date` date NOT NULL,
   `address` varchar(100) NOT NULL,
   `phone` varchar(20) NOT NULL,
@@ -204,7 +204,8 @@ ALTER TABLE `departments`
 -- Indexes for table `employees`
 --
 ALTER TABLE `employees`
-  ADD PRIMARY KEY (`employee_id`);
+  ADD PRIMARY KEY (`employee_id`),
+  ADD KEY `department_id` (`department_id`);
 
 --
 -- Indexes for table `payments`
@@ -286,6 +287,12 @@ ALTER TABLE `contracts`
 --
 ALTER TABLE `contract_employees`
   ADD CONSTRAINT `contract_employees_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `employees`
+--
+ALTER TABLE `employees`
+  ADD CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`);
 
 --
 -- Constraints for table `payments`
