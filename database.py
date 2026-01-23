@@ -62,17 +62,17 @@ class DatabaseManager:
             
             query = """
                 SELECT 
-                    employee_id,
-                    firstname,
-                    lastname,
-                    department_id,
+                    e.employee_id,
+                    e.firstname,
+                    e.lastname,
+                    e.department_id,
                     d.department_name AS department_name,
-                    hire_date,
-                    employee_status
+                    e.hire_date,
+                    e.employee_status
                 FROM employees e
                 JOIN departments d ON e.department_id = d.department_id
-                WHERE employee_status = 'active'
-                ORDER BY lastname, firstname
+                WHERE e.employee_status = 'active'
+                ORDER BY e.lastname, e.firstname
             """
             
             cursor.execute(query)
@@ -103,6 +103,36 @@ class DatabaseManager:
             - bank_name: str - όνομα τράπεζας
         @return: int - employee_id του νέου υπαλλήλου ή None αν αποτύχει
         '''
+        try:
+            cursor = self.connection.cursor()
+
+            query ='''
+                INSERT INTO employees (
+                firstname, 
+                lastname, 
+                marital_status, 
+                num_children, 
+                department_id, 
+                hire_date, 
+                address, 
+                phone, 
+                bank_account, 
+                bank_name, 
+                employee_status
+            ) VALUES(%(firstname)s, %(lastname)s, %(marital_status)s, %(num_children)s, %(department_id)s, %(hire_date)s, %(address)s, %(phone)s, %(bank_account)s, %(bank_name)s, 'active')
+            '''
+
+            cursor.execute(query, data)
+            self.connection.commit()
+        
+            new_id = cursor.lastrowid
+            cursor.close()
+            return new_id
+        except Error as e:
+            print(f" Error hiring new employee: {e}")
+            return []
+
+
         # TODO
         pass
     
