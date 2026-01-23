@@ -97,7 +97,8 @@ async function initDatabase() {
         const createContractEmployeesTableQuery = `
         CREATE TABLE IF NOT EXISTS contract_employees (
             employee_id INT PRIMARY KEY,
-            FOREIGN KEY (employee_id) REFERENCES employees(employee_id) 
+            contract_salary INT NOT NULL
+            FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
             ON DELETE CASCADE ON UPDATE CASCADE -- if we delete the employee the contract attribute of his is deleted also.
         )`;
 
@@ -121,6 +122,18 @@ async function initDatabase() {
             department_name VARCHAR(50) NOT NULL UNIQUE
         )`;
 
+        const initDepartmentsQuery = `
+            INSERT INTO departments (department_name)
+            VALUES 
+                ('Βιολογίας'),
+                ('Χημείας'),
+                ('Φυσικής'),
+                ('Επιστήμης Υπολογιστών'),
+                ('Επιστήμης & Τεχνολογίας Υλικών'),
+                ('Μαθηματικών & Εφαρμοσμένων Μαθηματικών'),
+                ('Ιατρικής');
+        `;
+
         await conn.query(createDepartmentTableQuery);
         await conn.query(createEmployeeTableQuery);
         await conn.query(createPaymentsTableQuery);
@@ -131,6 +144,9 @@ async function initDatabase() {
         await conn.query(createContractsTableQuery);
         await conn.query(createTeachingStaffTableQuery);
         await conn.query(createAdministrativeStaffTableQuery);
+        
+        //Initialise Departments
+        await conn.query(initDepartmentsQuery);
         
         return `Database HY360 initialized or updated successfully (if it does not exist).`;
     } catch (err) {

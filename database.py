@@ -89,7 +89,6 @@ class DatabaseManager:
     def hire_permanent_employee(self, data):
         '''
         προσληψη μονιμου υπαλληλου
-        
         @param data: dict με στοιχεία υπαλλήλου
             - name: str - πλήρες όνομα
             - marital_status: str - 'single' ή 'married'
@@ -157,6 +156,16 @@ class DatabaseManager:
             - contract_salary: float - μισθός σύμβασης
         @return: int - employee_id του νέου υπαλλήλου ή None αν αποτύχει
         '''
+        # try:
+        #     cursor = self.connection.cursor()
+        #     query = '''
+        #         INSERT INTO contract_employees (
+
+        #         )
+        #     '''
+        # except Error as e:
+        #     print(f" Error hiring new contract employee: {e}")
+        #     return []
         #TODO
         pass
     
@@ -169,11 +178,25 @@ class DatabaseManager:
         @param data: dict με στοιχεία προς αλλαγή (μπορεί να περιέχει οποιοδήποτε από τα πεδία του υπαλλήλου)
         @return: bool - True αν επιτύχει, False αν αποτύχει
         '''
-        #TODO
-        pass
+        try:
+            if not data: return True
+            set_clause = []
+            values = []
+            for key, value in data.items():
+                set_clause.append(f"{key} = %s")
+                values.append(value)
+            values.append(employee_id)
+            cursor = self.connection.cursor()
+            query = f"UPDATE employees SET {', '.join(set_clause)} WHERE employee_id = %s"
+            cursor.execute(query, tuple(values))
+            self.connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(f" Error updating employee {employee_id}: {e}")
+            return False
     
 
-    def update_base_salaries(self, category, new_amount):
         '''
         ενημερωση βασικου μισθου
         
@@ -181,6 +204,7 @@ class DatabaseManager:
         @param new_amount: float - νέο ποσό βασικού μισθού (δεν επιτρέπεται μείωση)
         @return: bool - True αν επιτύχει, False αν αποτύχει
         '''
+        
         #TODO
         pass
     
@@ -229,6 +253,24 @@ class DatabaseManager:
         
         @return: list of dict - λίστα με όλους τους υπαλλήλους, κάθε dict περιέχει τα βασικά στοιχεία
         '''
+        try:
+            cursor = self.connection.cursor(dictionary=True)
+            
+            query = """
+                SELECT * FROM employees
+                ORDER BY lastname, firstname
+            """
+            
+            cursor.execute(query)
+            employees = cursor.fetchall()
+            
+            cursor.close()
+            return employees
+            
+        except Error as e:
+            print(f" Error fetching employees: {e}")
+            return []
+
         #TODO
         pass
     
@@ -238,8 +280,23 @@ class DatabaseManager:
         @param employee_id: int - το ID του υπαλλήλου
         @return: dict - όλα τα στοιχεία του υπαλλήλου ή None αν δεν βρεθεί
         '''
-        #TODO
-        pass
+        try:
+            cursor = self.connection.cursor(dictionary=True)
+            
+            query = """
+                SELECT * FROM employees
+                WHERE employee_id = %s
+            """
+            
+            cursor.execute(query, (employee_id,))
+            employee = cursor.fetchone()
+            
+            cursor.close()
+            return employee
+            
+        except Error as e:
+            print(f" Error fetching employee: {e}")
+            return []
     
 
     def get_payroll_by_category(self):
@@ -251,8 +308,7 @@ class DatabaseManager:
             - total_amount: float - συνολικό ποσό μισθοδοσίας
         '''
         #TODO
-        pass
-    
+        pass   
 
     def get_salary_stats_by_category(self):
         '''
