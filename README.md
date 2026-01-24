@@ -86,7 +86,7 @@ python main.py
    - Αυτόματη εισαγωγή σε permanent_employees + teaching/admin staff
 
 2. **Σύναψη Σύμβασης** (Συμβασιούχοι)
-   - Contract start/end πρέπει 1η μήνα
+   - Contract start πρέπει 1η μήνα, contract end οποιαδήποτε ημερομηνία μετά το start
    - Contract salary καθορίζεται στη σύμβαση
 
 3. **Αλλαγή Στοιχείων Υπαλλήλου**
