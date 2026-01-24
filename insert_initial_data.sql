@@ -20,10 +20,10 @@ INSERT INTO departments (department_name) VALUES
 -- BASE SALARIES (Βασικοί μισθοί ανά κατηγορία)
 -- ================================================
 INSERT INTO base_salaries (employee_type, category, amount, valid_from, valid_to) VALUES
-('permanent', 'permanent_admin', 1200.00, '2020-01-01', NULL),
-('permanent', 'permanent_teaching', 1500.00, '2020-01-01', NULL),
-('contract', 'contract_admin', 1000.00, '2020-01-01', NULL),
-('contract', 'contract_teaching', 1200.00, '2020-01-01', NULL);
+('permanent', 'admin', 1200.00, '2020-01-01', NULL),
+('permanent', 'teaching', 1500.00, '2020-01-01', NULL),
+('contract', 'admin', 1000.00, '2020-01-01', NULL),
+('contract', 'teaching', 1200.00, '2020-01-01', NULL);
 
 
 -- ================================================

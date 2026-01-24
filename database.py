@@ -551,8 +551,8 @@ class DatabaseManager:
                 return False
 
             cursor.execute(
-                "UPDATE employees SET employee_status = 'terminated' WHERE employee_id = %s",
-                (employee_id,)
+                "UPDATE employees SET employee_status = 'terminated', termination_date = %s WHERE employee_id = %s",
+                (term_date, employee_id)
             )
 
             cursor.execute(
@@ -681,6 +681,7 @@ class DatabaseManager:
                     allowance_map[key] = row
 
             # fetch employees to pay
+            # Include: active employees OR terminated during/after this month
             cursor.execute(
                 """
                 SELECT
@@ -702,13 +703,14 @@ class DatabaseManager:
                 LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
                 LEFT JOIN contracts c
                   ON c.employee_id = e.employee_id
-                 AND c.employee_status = 'active'
+                 AND (c.employee_status = 'active' OR (c.employee_status = 'terminated' AND c.contract_end >= %s))
                  AND c.contract_start <= %s
                  AND c.contract_end >= %s
-                WHERE e.employee_status = 'active'
+                WHERE (e.employee_status = 'active'
+                       OR (e.employee_status = 'terminated' AND e.termination_date >= %s))
                   AND e.hire_date <= %s
                 """,
-                (payment_date, payment_date, payment_date)
+                (first_day, payment_date, first_day, first_day, payment_date)
             )
             employees = cursor.fetchall()
 
@@ -915,6 +917,7 @@ class DatabaseManager:
         """
         Payroll summary by category for the most recent processed month.
         Uses view_payroll_by_category (BONUS: SQL Views implementation)
+        Falls back to direct query if view doesn't exist.
 
         @return: list of dict [{category, total_amount}]
         """
@@ -929,17 +932,44 @@ class DatabaseManager:
             if not ref_month:
                 return []
 
-            # Use VIEW instead of complex JOIN query
-            cursor.execute(
-                """
-                SELECT category, total_amount
-                FROM view_payroll_by_category
-                WHERE reference_month = %s
-                ORDER BY category
-                """,
-                (ref_month,)
-            )
-            results = cursor.fetchall()
+            # Try VIEW first, fallback to direct query
+            try:
+                cursor.execute(
+                    """
+                    SELECT category, total_amount
+                    FROM view_payroll_by_category
+                    WHERE reference_month = %s
+                    ORDER BY category
+                    """,
+                    (ref_month,)
+                )
+                results = cursor.fetchall()
+            except Error:
+                # Fallback: direct query without view
+                cursor.execute(
+                    """
+                    SELECT
+                      CASE
+                        WHEN pe.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'permanent_teaching'
+                        WHEN pe.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'permanent_admin'
+                        WHEN ce.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'contract_teaching'
+                        WHEN ce.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'contract_admin'
+                        ELSE 'unknown'
+                      END AS category,
+                      SUM(p.total_amount) AS total_amount
+                    FROM payments p
+                    JOIN employees e ON p.employee_id = e.employee_id
+                    LEFT JOIN permanent_employees pe ON pe.employee_id = e.employee_id
+                    LEFT JOIN contract_employees ce ON ce.employee_id = e.employee_id
+                    LEFT JOIN teaching_staff ts ON ts.employee_id = e.employee_id
+                    LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
+                    WHERE p.reference_month = %s
+                    GROUP BY category
+                    ORDER BY category
+                    """,
+                    (ref_month,)
+                )
+                results = cursor.fetchall()
             return results
         except Error as e:
             print(f" Error fetching payroll by category: {e}")
@@ -953,6 +983,7 @@ class DatabaseManager:
         """
         Max/min/avg salary by category for the most recent processed month.
         Uses view_salary_stats_by_category (BONUS: SQL Views implementation)
+        Falls back to direct query if view doesn't exist.
 
         @return: list of dict [{category, max_salary, min_salary, avg_salary}]
         """
@@ -966,17 +997,47 @@ class DatabaseManager:
             if not ref_month:
                 return []
 
-            # Use VIEW instead of complex JOIN query
-            cursor.execute(
-                """
-                SELECT category, max_salary, min_salary, avg_salary
-                FROM view_salary_stats_by_category
-                WHERE reference_month = %s
-                ORDER BY category
-                """,
-                (ref_month,)
-            )
-            return cursor.fetchall()
+            # Try VIEW first, fallback to direct query
+            try:
+                cursor.execute(
+                    """
+                    SELECT category, max_salary, min_salary, avg_salary
+                    FROM view_salary_stats_by_category
+                    WHERE reference_month = %s
+                    ORDER BY category
+                    """,
+                    (ref_month,)
+                )
+                results = cursor.fetchall()
+            except Error:
+                # Fallback: direct query without view
+                cursor.execute(
+                    """
+                    SELECT
+                      CASE
+                        WHEN pe.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'permanent_teaching'
+                        WHEN pe.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'permanent_admin'
+                        WHEN ce.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'contract_teaching'
+                        WHEN ce.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'contract_admin'
+                        ELSE 'unknown'
+                      END AS category,
+                      MAX(p.total_amount) AS max_salary,
+                      MIN(p.total_amount) AS min_salary,
+                      AVG(p.total_amount) AS avg_salary
+                    FROM payments p
+                    JOIN employees e ON p.employee_id = e.employee_id
+                    LEFT JOIN permanent_employees pe ON pe.employee_id = e.employee_id
+                    LEFT JOIN contract_employees ce ON ce.employee_id = e.employee_id
+                    LEFT JOIN teaching_staff ts ON ts.employee_id = e.employee_id
+                    LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
+                    WHERE p.reference_month = %s
+                    GROUP BY category
+                    ORDER BY category
+                    """,
+                    (ref_month,)
+                )
+                results = cursor.fetchall()
+            return results
         except Error as e:
             print(f" Error fetching salary stats: {e}")
             return []
@@ -1039,31 +1100,54 @@ class DatabaseManager:
         """
         Payroll history for a specific employee.
         Uses view_employee_payroll_details (BONUS: SQL Views implementation)
+        Falls back to direct query if view doesn't exist.
 
         @return: list of dict [{payment_date, amount, reference_month, base_salary, allowances breakdown}]
         """
         cursor = None
         try:
             cursor = self.connection.cursor(dictionary=True)
-            # Use VIEW for richer employee details
-            cursor.execute(
-                """
-                SELECT
-                    payment_date,
-                    reference_month,
-                    base_salary,
-                    years_increase,
-                    family_allowance,
-                    research_allowance,
-                    library_allowance,
-                    total_amount AS amount
-                FROM view_employee_payroll_details
-                WHERE employee_id = %s AND payment_date IS NOT NULL
-                ORDER BY payment_date DESC
-                """,
-                (employee_id,)
-            )
-            return cursor.fetchall()
+            # Try VIEW first, fallback to direct query
+            try:
+                cursor.execute(
+                    """
+                    SELECT
+                        payment_date,
+                        reference_month,
+                        base_salary,
+                        years_increase,
+                        family_allowance,
+                        research_allowance,
+                        library_allowance,
+                        total_amount AS amount
+                    FROM view_employee_payroll_details
+                    WHERE employee_id = %s AND payment_date IS NOT NULL
+                    ORDER BY payment_date DESC
+                    """,
+                    (employee_id,)
+                )
+                results = cursor.fetchall()
+            except Error:
+                # Fallback: direct query from payments table
+                cursor.execute(
+                    """
+                    SELECT
+                        payment_date,
+                        reference_month,
+                        base_salary,
+                        years_increase,
+                        family_allowance,
+                        research_allowance,
+                        library_allowance,
+                        total_amount AS amount
+                    FROM payments
+                    WHERE employee_id = %s
+                    ORDER BY payment_date DESC
+                    """,
+                    (employee_id,)
+                )
+                results = cursor.fetchall()
+            return results
         except Error as e:
             print(f" Error fetching employee payroll history: {e}")
             return []
@@ -1076,6 +1160,7 @@ class DatabaseManager:
         """
         Total payroll by category for the most recent processed month.
         Uses view_payroll_by_category (BONUS: SQL Views implementation)
+        Falls back to direct query if view doesn't exist.
 
         @return: list of dict [{category, total}]
         """
@@ -1089,17 +1174,45 @@ class DatabaseManager:
             if not ref_month:
                 return []
 
-            # Use VIEW - reuses same view as get_payroll_by_category
-            cursor.execute(
-                """
-                SELECT category, total_amount AS total
-                FROM view_payroll_by_category
-                WHERE reference_month = %s
-                ORDER BY category
-                """,
-                (ref_month,)
-            )
-            return cursor.fetchall()
+            # Try VIEW first, fallback to direct query
+            try:
+                cursor.execute(
+                    """
+                    SELECT category, total_amount AS total
+                    FROM view_payroll_by_category
+                    WHERE reference_month = %s
+                    ORDER BY category
+                    """,
+                    (ref_month,)
+                )
+                results = cursor.fetchall()
+            except Error:
+                # Fallback: direct query without view
+                cursor.execute(
+                    """
+                    SELECT
+                      CASE
+                        WHEN pe.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'permanent_teaching'
+                        WHEN pe.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'permanent_admin'
+                        WHEN ce.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'contract_teaching'
+                        WHEN ce.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'contract_admin'
+                        ELSE 'unknown'
+                      END AS category,
+                      SUM(p.total_amount) AS total
+                    FROM payments p
+                    JOIN employees e ON p.employee_id = e.employee_id
+                    LEFT JOIN permanent_employees pe ON pe.employee_id = e.employee_id
+                    LEFT JOIN contract_employees ce ON ce.employee_id = e.employee_id
+                    LEFT JOIN teaching_staff ts ON ts.employee_id = e.employee_id
+                    LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
+                    WHERE p.reference_month = %s
+                    GROUP BY category
+                    ORDER BY category
+                    """,
+                    (ref_month,)
+                )
+                results = cursor.fetchall()
+            return results
         except Error as e:
             print(f" Error fetching total payroll by category: {e}")
             return []

@@ -147,13 +147,10 @@ class PayrollApp:
         # Row 7: Ημερομηνία έναρξης
         ttk.Label(frame, text="Ημερομηνία Έναρξης:").grid(row=7, column=0, sticky='w', pady=5)
         hire_date_entry = ttk.Entry(frame, width=40)
-        # Υπολογισμός ημερομηνίας (1η του επόμενου μήνα)
+        # Για μόνιμους: 1η του τρέχοντος μήνα (όχι μελλοντική)
         today = datetime.now()
-        if today.month == 12:
-            next_month = f"{today.year + 1}-01-01"
-        else:
-            next_month = f"{today.year}-{today.month + 1:02d}-01"
-        hire_date_entry.insert(0, next_month)
+        current_month_first = f"{today.year}-{today.month:02d}-01"
+        hire_date_entry.insert(0, current_month_first)
         hire_date_entry.grid(row=7, column=1, pady=5)
         
         # Row 8: Διεύθυνση

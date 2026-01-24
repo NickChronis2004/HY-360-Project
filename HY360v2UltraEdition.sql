@@ -112,6 +112,7 @@ CREATE TABLE `employees` (
   `num_children` int(11) DEFAULT 0,
   `department_id` int(11) NOT NULL,
   `hire_date` date NOT NULL,
+  `termination_date` date DEFAULT NULL,
   `address` varchar(100) NOT NULL,
   `phone` varchar(20) NOT NULL,
   `bank_account` varchar(40) NOT NULL,
