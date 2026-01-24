@@ -151,7 +151,7 @@ Total = Contract Salary + Family Allowance + Library Allowance (αν teaching)
 - **Hire Date (Permanent)**: 1η μήνα, όχι μελλοντική
 - **Hire Date (Contract)**: 1η μήνα, σήμερα ή μελλοντική
 - **Contract Start**: 1η μήνα
-- **Contract End**: Μετά από start, 1η μήνα
+- **Contract End**: Μετά από start (οποιαδήποτε ημερομηνία)
 - **Termination Date**: Τελευταία μέρα μήνα
 - **Salary Changes**: Μόνο αύξηση (no decrease)
 
@@ -185,6 +185,6 @@ Total = Contract Salary + Family Allowance + Library Allowance (αν teaching)
 - Το .js αρχείο δεν χρησιμοποιείται - προτιμήστε SQL import
 - Τα views είναι optional (bonus) αλλά προτεινόμενα
 - Όλα τα κείμενα είναι στα ελληνικά (UTF-8)
-- Default hire date suggestion: 1η επόμενου μήνα
+- Default hire date: 1η τρέχοντος μήνα (για μόνιμους), 1η επόμενου μήνα (για συμβασιούχους)
 
 ---
