@@ -894,8 +894,25 @@ class PayrollApp:
                 for row in history:
                     if isinstance(row, dict):
                         date = row.get('payment_date', '')
-                        amount = row.get('amount', row.get('total_amount', ''))
-                        result_text.insert(tk.END, f"- {date}: {amount}\n")
+                        month = row.get('reference_month', '')
+                        base = row.get('base_salary', 0)
+                        years_inc = row.get('years_increase', 0)
+                        family = row.get('family_allowance', 0)
+                        research = row.get('research_allowance', 0)
+                        library = row.get('library_allowance', 0)
+                        total = row.get('amount', row.get('total_amount', 0))
+
+                        result_text.insert(tk.END, f"\n--- {month} ({date}) ---\n")
+                        result_text.insert(tk.END, f"  Βασικός μισθός: {base}€\n")
+                        if years_inc > 0:
+                            result_text.insert(tk.END, f"  Αύξηση ετών: {years_inc}€\n")
+                        if family > 0:
+                            result_text.insert(tk.END, f"  Οικογενειακό επίδομα: {family}€\n")
+                        if research > 0:
+                            result_text.insert(tk.END, f"  Επίδομα έρευνας: {research}€\n")
+                        if library > 0:
+                            result_text.insert(tk.END, f"  Επίδομα βιβλιοθήκης: {library}€\n")
+                        result_text.insert(tk.END, f"  ΣΥΝΟΛΟ: {total}€\n")
                     else:
                         result_text.insert(tk.END, f"- {row}\n")
 

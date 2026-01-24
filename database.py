@@ -115,7 +115,7 @@ class DatabaseManager:
             hire_date_raw = (data.get('hire_date') or '').strip()
             hire_date = datetime.strptime(hire_date_raw, '%Y-%m-%d').date()
             today = datetime.now().date()
-            if hire_date.day != 1 or hire_date < today:
+            if hire_date.day != 1 or hire_date > today:
                 return None
 
             category = data.get('category')
@@ -913,6 +913,7 @@ class DatabaseManager:
     def get_payroll_by_category(self):
         """
         Payroll summary by category for the most recent processed month.
+        Uses view_payroll_by_category (BONUS: SQL Views implementation)
 
         @return: list of dict [{category, total_amount}]
         """
@@ -927,25 +928,12 @@ class DatabaseManager:
             if not ref_month:
                 return []
 
+            # Use VIEW instead of complex JOIN query
             cursor.execute(
                 """
-                SELECT
-                  CASE 
-                    WHEN pe.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'permanent_teaching'
-                    WHEN pe.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'permanent_admin'
-                    WHEN ce.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'contract_teaching'
-                    WHEN ce.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'contract_admin'
-                    ELSE 'unknown'
-                  END AS category,
-                  SUM(p.total_amount) AS total_amount
-                FROM payments p
-                JOIN employees e ON p.employee_id = e.employee_id
-                LEFT JOIN permanent_employees pe ON pe.employee_id = e.employee_id
-                LEFT JOIN contract_employees ce ON ce.employee_id = e.employee_id
-                LEFT JOIN teaching_staff ts ON ts.employee_id = e.employee_id
-                LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
-                WHERE p.reference_month = %s
-                GROUP BY category
+                SELECT category, total_amount
+                FROM view_payroll_by_category
+                WHERE reference_month = %s
                 ORDER BY category
                 """,
                 (ref_month,)
@@ -963,6 +951,7 @@ class DatabaseManager:
     def get_salary_stats_by_category(self):
         """
         Max/min/avg salary by category for the most recent processed month.
+        Uses view_salary_stats_by_category (BONUS: SQL Views implementation)
 
         @return: list of dict [{category, max_salary, min_salary, avg_salary}]
         """
@@ -976,27 +965,12 @@ class DatabaseManager:
             if not ref_month:
                 return []
 
+            # Use VIEW instead of complex JOIN query
             cursor.execute(
                 """
-                SELECT
-                  CASE 
-                    WHEN pe.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'permanent_teaching'
-                    WHEN pe.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'permanent_admin'
-                    WHEN ce.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'contract_teaching'
-                    WHEN ce.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'contract_admin'
-                    ELSE 'unknown'
-                  END AS category,
-                  MAX(p.total_amount) AS max_salary,
-                  MIN(p.total_amount) AS min_salary,
-                  AVG(p.total_amount) AS avg_salary
-                FROM payments p
-                JOIN employees e ON p.employee_id = e.employee_id
-                LEFT JOIN permanent_employees pe ON pe.employee_id = e.employee_id
-                LEFT JOIN contract_employees ce ON ce.employee_id = e.employee_id
-                LEFT JOIN teaching_staff ts ON ts.employee_id = e.employee_id
-                LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
-                WHERE p.reference_month = %s
-                GROUP BY category
+                SELECT category, max_salary, min_salary, avg_salary
+                FROM view_salary_stats_by_category
+                WHERE reference_month = %s
                 ORDER BY category
                 """,
                 (ref_month,)
@@ -1063,17 +1037,27 @@ class DatabaseManager:
     def get_employee_payroll_history(self, employee_id):
         """
         Payroll history for a specific employee.
+        Uses view_employee_payroll_details (BONUS: SQL Views implementation)
 
-        @return: list of dict [{payment_date, amount, reference_month}]
+        @return: list of dict [{payment_date, amount, reference_month, base_salary, allowances breakdown}]
         """
         cursor = None
         try:
             cursor = self.connection.cursor(dictionary=True)
+            # Use VIEW for richer employee details
             cursor.execute(
                 """
-                SELECT payment_date, total_amount AS amount, reference_month
-                FROM payments
-                WHERE employee_id = %s
+                SELECT
+                    payment_date,
+                    reference_month,
+                    base_salary,
+                    years_increase,
+                    family_allowance,
+                    research_allowance,
+                    library_allowance,
+                    total_amount AS amount
+                FROM view_employee_payroll_details
+                WHERE employee_id = %s AND payment_date IS NOT NULL
                 ORDER BY payment_date DESC
                 """,
                 (employee_id,)
@@ -1090,6 +1074,7 @@ class DatabaseManager:
     def get_total_payroll_by_category(self):
         """
         Total payroll by category for the most recent processed month.
+        Uses view_payroll_by_category (BONUS: SQL Views implementation)
 
         @return: list of dict [{category, total}]
         """
@@ -1103,25 +1088,12 @@ class DatabaseManager:
             if not ref_month:
                 return []
 
+            # Use VIEW - reuses same view as get_payroll_by_category
             cursor.execute(
                 """
-                SELECT
-                  CASE 
-                    WHEN pe.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'permanent_teaching'
-                    WHEN pe.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'permanent_admin'
-                    WHEN ce.employee_id IS NOT NULL AND ts.employee_id IS NOT NULL THEN 'contract_teaching'
-                    WHEN ce.employee_id IS NOT NULL AND ads.employee_id IS NOT NULL THEN 'contract_admin'
-                    ELSE 'unknown'
-                  END AS category,
-                  SUM(p.total_amount) AS total
-                FROM payments p
-                JOIN employees e ON p.employee_id = e.employee_id
-                LEFT JOIN permanent_employees pe ON pe.employee_id = e.employee_id
-                LEFT JOIN contract_employees ce ON ce.employee_id = e.employee_id
-                LEFT JOIN teaching_staff ts ON ts.employee_id = e.employee_id
-                LEFT JOIN administrative_staff ads ON ads.employee_id = e.employee_id
-                WHERE p.reference_month = %s
-                GROUP BY category
+                SELECT category, total_amount AS total
+                FROM view_payroll_by_category
+                WHERE reference_month = %s
                 ORDER BY category
                 """,
                 (ref_month,)
