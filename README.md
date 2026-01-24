@@ -31,10 +31,13 @@ Payroll Management System για το Πανεπιστήμιο Κρήτης.
 
 ### 2. Setup Database
 
+**ΣΗΜΑΝΤΙΚΟ: Κανε import με τη σειρα!**
+
 1. Ανοίγεις XAMPP => Start MySQL
 2. Ανοίγεις phpMyAdmin
-3. Import το αρχείο `HY360v2UltraEdition.sql`
-4. Πας στο SQL tab και κάνεις import το `create_views.sql` (το bonus)
+3. Import το αρχείο `HY360v2UltraEdition.sql` (δημιουργεί τους πίνακες)
+4. Import το αρχείο `insert_initial_data.sql` (βάζει τα departments, salaries, allowances)
+5. Import το `create_views.sql` (το bonus - optional)
 
 ### 3. Configuration
 
@@ -162,6 +165,10 @@ Total = Contract Salary + Family Allowance + Library Allowance (αν teaching)
 
 **Problem: "Table doesn't exist"**
 - Import το HY360v2UltraEdition.sql
+
+**Problem: "Τα dropdowns είναι άδεια (departments, employees)"**
+- Import το insert_initial_data.sql (departments + salaries + allowances)
+- Για employees: πρέπει να προσθέσεις μέσω GUI
 
 **Problem: "View not found"**
 - Import το create_views.sql

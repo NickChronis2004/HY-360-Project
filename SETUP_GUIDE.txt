@@ -1,0 +1,96 @@
+=====================================================
+  ΓΡΗΓΟΡΗ ΕΓΚΑΤΑΣΤΑΣΗ - HY-360 PROJECT
+=====================================================
+
+ΒΗΜΑ 1: Start XAMPP
+-------------------
+- Ανοιξε XAMPP Control Panel
+- Start Apache
+- Start MySQL
+
+
+ΒΗΜΑ 2: Import Database (ΜΕ ΤΗ ΣΕΙΡΑ!)
+---------------------------------------
+1. Ανοιξε phpMyAdmin (http://localhost/phpmyadmin)
+
+2. Δημιουργησε βαση HY360:
+   - Πατα "New"
+   - Ονομα: HY360
+   - Collation: utf8mb4_general_ci
+   - Create
+
+3. Import τα αρχεια ΜΕ ΤΗ ΣΕΙΡΑ:
+
+   α) HY360v2UltraEdition.sql
+      - Import tab → Choose file → Go
+      (Δημιουργει τους πινακες)
+
+   β) insert_initial_data.sql
+      - Import tab → Choose file → Go
+      (Βαζει departments, salaries, allowances)
+
+   γ) create_views.sql (BONUS - optional)
+      - SQL tab → Copy-paste το περιεχομενο → Go
+      (Δημιουργει τα 3 views)
+
+
+ΒΗΜΑ 3: Python Setup
+--------------------
+pip install mysql-connector-python
+
+
+ΒΗΜΑ 4: Configuration
+---------------------
+Ανοιξε database.py (line 13-17)
+Αλλαξε το password αν χρειαζεται:
+
+self.connection = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",  # <-- Βαλε το password σου
+    database="HY360"
+)
+
+
+ΒΗΜΑ 5: Run
+-----------
+python main.py
+
+
+=====================================================
+  ΕΠΑΛΗΘΕΥΣΗ ΟΤΙ ΟΛΑ ΔΟΥΛΕΥΟΥΝ
+=====================================================
+
+Στο phpMyAdmin, τρεξε:
+
+SELECT * FROM departments;
+-- Πρεπει να βλεπεις 7 τμηματα
+
+SELECT * FROM base_salaries;
+-- Πρεπει να βλεπεις 4 μισθους
+
+SELECT * FROM allowances;
+-- Πρεπει να βλεπεις 3 επιδοματα
+
+SHOW FULL TABLES WHERE Table_type = 'VIEW';
+-- Πρεπει να βλεπεις 3 views (αν εκανες import το bonus)
+
+
+=====================================================
+  ΤΕΣΤ ΤΗΣ ΕΦΑΡΜΟΓΗΣ
+=====================================================
+
+1. Ανοιξε την εφαρμογη (python main.py)
+
+2. Προσληψη Μονιμου Υπαλληλου:
+   - Συμπληρωσε τα στοιχεια
+   - Επιλεξε Τμημα (πρεπει να φαινονται τα 7!)
+   - Υποβολη
+
+3. Καταβολη Μισθοδοσιας:
+   - Επιλεξε μηνα (π.χ. 2026-01)
+   - Εκτελεση Πληρωμης
+
+4. Αναφορες:
+   - Δοκιμασε ολες τις 5 αναφορες
+   - Πρεπει να βγαζουν δεδομενα
