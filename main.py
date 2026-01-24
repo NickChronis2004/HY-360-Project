@@ -402,6 +402,7 @@ class PayrollApp:
         ttk.Button(btn_frame, text="Ακύρωση", command=window.destroy).pack(side='left', padx=5)
 
     # ========== ΑΛΛΑΓΗ ΣΤΟΙΧΕΙΩΝ ==========
+
     def open_update_employee(self):
             """Παράθυρο αλλαγής στοιχείων"""
             window = tk.Toplevel(self.root)
@@ -455,19 +456,33 @@ class PayrollApp:
                 children_spin.set(emp_data.get('num_children', 0))
                 children_spin.grid(row=2, column=1, sticky='w', pady=5)
 
-                # Department
+                # Department (ΔΙΟΡΘΩΣΗ ΕΔΩ)
                 ttk.Label(edit_frame, text="Τμήμα:").grid(row=3, column=0, sticky='w', pady=5)
                 departments = self._get_departments()
                 dept_var = tk.StringVar()
                 dept_names = [d["department_name"] for d in departments]
                 dept_map = {d["department_name"]: d["department_id"] for d in departments}
+                
                 dept_combo = ttk.Combobox(edit_frame, textvariable=dept_var, width=40,
                                           values=dept_names, state='readonly')
-                current_dept = emp_data.get('department_name')
-                if current_dept in dept_names:
-                    dept_combo.set(current_dept)
+                
+                # --- FIX START ---
+                # Βρίσκουμε το όνομα του τμήματος βάσει του department_id του υπαλλήλου
+                current_dept_id = emp_data.get('department_id')
+                current_dept_name = None
+                
+                # Ψάχνουμε στη λίστα departments ποιο όνομα αντιστοιχεί στο ID
+                for dept in departments:
+                    if dept['department_id'] == current_dept_id:
+                        current_dept_name = dept['department_name']
+                        break
+                
+                if current_dept_name and current_dept_name in dept_names:
+                    dept_combo.set(current_dept_name)
                 elif dept_names:
                     dept_combo.current(0)
+                # --- FIX END ---
+                
                 dept_combo.grid(row=3, column=1, pady=5)
 
                 # Address
